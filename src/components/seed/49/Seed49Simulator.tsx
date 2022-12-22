@@ -14,6 +14,7 @@ import {
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import { ChevronRightRounded, PlayArrowRounded, RestartAltRounded } from '@mui/icons-material';
+import useWeightedQuestions from '@hooks/useWeightedQuestions';
 
 interface Seed49SimulatorProps {
     data: SeedMobData[];
@@ -25,20 +26,31 @@ const Seed49Simulator = ({ data }: Seed49SimulatorProps) => {
     const [num, setNum] = useState(0);
     const [openRestartModal, setOpenRestartModal] = useState<boolean>(false);
     const [isPlaying, setIsPlaying] = useState(false);
+    const { getNum, setCorrect, setIncorrect, resetWeights } = useWeightedQuestions(8);
 
     const handleNext = () => {
-        setNum(Math.floor(Math.random() * mobs.length));
+        setNum(getNum());
     };
 
     const handlePlay = () => {
-        setMobs(data.sort(() => Math.random() - 0.5));
+        const questionAnswers = data.sort(() => Math.random() - 0.5);
+        setMobs(questionAnswers);
         setNum(0);
+        resetWeights(questionAnswers);
         setIsPlaying(true);
     };
 
     const handleRestart = () => {
         handleCloseRestart();
         setIsPlaying(false);
+    };
+
+    const handleOnRight = (response: string, num: number) => {
+        setCorrect(num);
+    };
+
+    const handleOnWrong = (response: string, num: number) => {
+        setIncorrect(num);
     };
 
     const handleCloseRestart = () => setOpenRestartModal(false);
@@ -51,7 +63,12 @@ const Seed49Simulator = ({ data }: Seed49SimulatorProps) => {
                     {
                         isPlaying ? (
                             <>
-                                <Seed49SimulatorContent mob={mobs[num]} key={mobs[num].name} />
+                                <Seed49SimulatorContent mob={mobs[num]} 
+                                                        key={mobs[num].name} 
+                                                        num={num} 
+                                                        onRight={handleOnRight}
+                                                        onWrong={handleOnWrong} 
+                                />
                             </>
                         ) : (
                             <Grid container spacing={2} alignItems={'center'}>

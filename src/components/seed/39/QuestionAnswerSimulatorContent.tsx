@@ -65,10 +65,12 @@ const Button = styled(MuiButton)<ButtonProps>(({ theme, color }) => css`
 interface QuestionAnswerSimulatorContentProps {
     qa: QuestionAnswer;
     onPick?: (choice: number) => void;
-    onRight?: () => void;
+    onRight?: (choice: number, num: number) => void;
+    onWrong?: (choice: number, num: number) => void;
+    num: number;
 }
 
-const QuestionAnswerSimulatorContent = ({ qa, onPick, onRight }: QuestionAnswerSimulatorContentProps) => {
+const QuestionAnswerSimulatorContent = ({ qa, onPick, onRight, onWrong, num }: QuestionAnswerSimulatorContentProps) => {
     const { i18n } = useTranslation();
     const [pick, setPick] = useState<number>(NaN);
 
@@ -80,8 +82,10 @@ const QuestionAnswerSimulatorContent = ({ qa, onPick, onRight }: QuestionAnswerS
             onPick(choice);
         }
         setPick(choice);
-        if (onRight && choice === qa.answer) {
-            onRight();
+        if (choice === qa.answer) {
+            onRight && onRight(choice, num);
+        } else {
+            onWrong && onWrong(choice, num);
         }
     };
 

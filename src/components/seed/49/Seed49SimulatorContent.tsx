@@ -11,6 +11,9 @@ import { Locales } from '@tools/locales';
 
 interface Seed49SimulatorContentProps {
     mob: SeedMobData;
+    onRight?: (response: string, num: number) => void;
+    onWrong?: (response: string, num: number) => void;
+    num: number;
 }
 
 const seed49I18nOptions: TOptions = { ns: 'seed49' };
@@ -89,26 +92,31 @@ const getFilterCss = (theme: Theme): string => {
         : 'brightness(0%) drop-shadow(0 0 1px white)';
 };
 
-const Seed49SimulatorContent = ({ mob }: Seed49SimulatorContentProps) => {
+const Seed49SimulatorContent = ({ mob, onRight, onWrong, num }: Seed49SimulatorContentProps) => {
     const [response, setResponse] = useState<string>('');
     const { t, i18n } = useTranslation(['common', 'seed49', 'seed49simulator']);
     const theme = useTheme();
     const filterCss = useMemo(() => getFilterCss(theme), [theme]);
     const [error, setError] = useState<boolean>(false);
     const [ok, setOk] = useState<boolean>(false);
+    const [hasPicked, setHasPicked] = useState<boolean>(false);
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         setResponse(e.target.value);
         setError(false);
         setOk(false);
+        setHasPicked(false);
     };
 
     const handleSubmit = () => {
         if (response === t(mob.name, seed49I18nOptions)) {
             setOk(true);
+            !hasPicked && onRight && onRight(response, num);
         } else {
             setError(true);
+            !hasPicked && onWrong && onWrong(response, num);
         }
+        setHasPicked(true);
     };
 
     const handleHint = () => {
@@ -119,6 +127,8 @@ const Seed49SimulatorContent = ({ mob }: Seed49SimulatorContentProps) => {
                 .map((c, i) => (i % 2 === 0 || c === ' ') ? c : '_')
                 .join('');
         setResponse(hint);
+        !hasPicked && onWrong && onWrong(response, num);
+        setHasPicked(true);
         const field = document.getElementById('mob-field') as HTMLInputElement;
         if (field) {
             field.focus();
@@ -128,6 +138,8 @@ const Seed49SimulatorContent = ({ mob }: Seed49SimulatorContentProps) => {
     const handleAnswer = () => {
         setResponse(t(mob.name, seed49I18nOptions));
         setOk(true);
+        !hasPicked && onWrong && onWrong(response, num);
+        setHasPicked(true);
         const field = document.getElementById('mob-field') as HTMLInputElement;
         if (field) {
             field.focus();

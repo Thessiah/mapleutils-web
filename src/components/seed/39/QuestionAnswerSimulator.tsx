@@ -16,6 +16,7 @@ import { useEffect, useState } from 'react';
 import { ChevronRightRounded, PlayArrowRounded, RestartAltRounded } from '@mui/icons-material';
 import { isKeyboardTargetInput } from '@tools/keyboardEventHelper';
 import { useTranslation } from 'next-i18next';
+import useWeightedQuestions from '@hooks/useWeightedQuestions';
 
 interface QuestionAnswerSimulatorProps {
     data: QuestionAnswer[];
@@ -29,14 +30,15 @@ const QuestionAnswerSimulator = ({ data }: QuestionAnswerSimulatorProps) => {
     const [focus, setFocus] = useState<number>(NaN);
     // const [includeDuplicates, setIncludeDuplicates] = useState<boolean>(false);
     const [openRestartModal, setOpenRestartModal] = useState<boolean>(false);
-    const [correct, setCorrect] = useState<number>(0);
+    const [numCorrect, setNumCorrect] = useState<number>(0);
     const [length, setLength] = useState<number>(1);
     const [isPlaying, setIsPlaying] = useState(false);
+    const { getNum, setCorrect, setIncorrect, resetWeights } = useWeightedQuestions(16);
 
     const handleNext = () => {
         setHasPicked(false);
         setLength(l => l + 1);
-        setNum(Math.floor(Math.random() * questionAnswers.length));
+        setNum(getNum());
     };
 
     const handlePick = () => {
@@ -78,9 +80,11 @@ const QuestionAnswerSimulator = ({ data }: QuestionAnswerSimulatorProps) => {
     };
 
     const handlePlay = () => {
-        setQuestionAnswers(data.sort(() => Math.random() - 0.5));
-        setCorrect(0);
+        const questionAnswers = data.sort(() => Math.random() - 0.5);
+        setQuestionAnswers(questionAnswers);
+        setNumCorrect(0);
         setLength(0);
+        resetWeights(questionAnswers);
         setNum(0);
         setIsPlaying(true);
     };
@@ -91,9 +95,16 @@ const QuestionAnswerSimulator = ({ data }: QuestionAnswerSimulatorProps) => {
 
     const handleCloseRestart = () => setOpenRestartModal(false);
 
-    const handleOnRight = () => {
+    const handleOnRight = (choice: number, num: number) => {
         if (!hasPicked) {
-            setCorrect(correct => correct + 1);
+            setNumCorrect(correct => correct + 1);
+            setCorrect(num);
+        }
+    };
+
+    const handleOnWrong = (choice: number, num: number) => {
+        if (!hasPicked) {
+            setIncorrect(num);
         }
     };
 
@@ -114,13 +125,18 @@ const QuestionAnswerSimulator = ({ data }: QuestionAnswerSimulatorProps) => {
                             {/*</Typography>*/}
                             {/*</Box>*/}
                             {/*</div>*/}
-                            <QuestionAnswerSimulatorContent onPick={handlePick} onRight={handleOnRight}
-                                                            qa={questionAnswers[num]} key={num} />
+                            <QuestionAnswerSimulatorContent onPick={handlePick}
+                                                            onRight={handleOnRight} 
+                                                            onWrong={handleOnWrong}
+                                                            qa={questionAnswers[num]} 
+                                                            key={num} 
+                                                            num={num}
+                            />
                             <div>
                                 <Typography variant={'caption'} component={'p'}
                                             align={'right'}
                                             gutterBottom>
-                                    ({t('correctAnswerRate')}: {(correct / (hasPicked ? length + 1 : length) * 100 || 0).toFixed(2)}%)
+                                    ({t('correctAnswerRate')}: {(numCorrect / (hasPicked ? length + 1 : length) * 100 || 0).toFixed(2)}%);
                                 </Typography>
                             </div>
                         </>
